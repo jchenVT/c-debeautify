@@ -1,5 +1,4 @@
 import sys
-import time
 from random import random, randint
 from collections import namedtuple
 from re import compile, search, match
