@@ -2,40 +2,86 @@ from __future__ import print_function
 import pymysql
 import pycparser
 from pycparser.c_ast import NodeVisitor
-from pycparser import c_parser
+from pycparser import c_parser, c_generator
 
 variables = {}
-functions = {}
+functions = {'main' : 'main'}
 
 conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='', db='c_debeautify')
 cur = conn.cursor()
 
+#checks to see if the variable being looked at has already been renamed or not
+def checkVariableInitalized(node):
+    # checks to see if variable has been renamed already. If not, pick an unused name at random, add it to the dict and
+    # If so, just return the name that is currently assigned
+    if node.name not in variables:
+        cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
+        result = cur.fetchone()[1]
 
+        while result in variables:
+            cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
+            result = cur.fetchone()[1]
 
+        variables[node.name] = result
+        return result
+    return variables[node.name]
+
+#checks to see if the function being looked at has already been renamed, ignoring main as that will make programs not run.
+def checkFunctionInitialized(node):
+    x = node.name
+    if x not in functions:
+        cur.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
+        result = cur.fetchone()[1]
+
+        while result in functions:
+            cur.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
+            result = cur.fetchone()[1]
+
+        functions[node.name] = result
+        return result
+    return functions[node.name]
+
+#class that walks through the AST to find all the nodes that are of ID type. These are used in operations and assignment
+#statments
+class IDVisistor(NodeVisitor):
+    def visit_ID(self, node):
+        newName = checkVariableInitalized(node)
+        node.name = newName
+
+#class that walks through the AST to find all the nodes that are of Decl type. These are the function and variable
+#declrations
 class DeclVisitor(NodeVisitor):
-    def __init__(self):
-        self.values = []
 
     def visit_Decl(self, node):
-        #print(node)
-        if not isinstance(node.type, pycparser.c_ast.FuncDecl):
-            if node.name not in variables:
-                cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
-                result = cur.fetchone()[1]
 
-                while result in variables:
-                    cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
-                    result = cur.fetchone()
+        #checks to see if the node is a function declaration
+        if isinstance(node.type, pycparser.c_ast.FuncDecl):
 
-                variables[node.name] = result
-                #print(result)
-            #print("isNotFunction")
-            newName = variables[node.name]
+            #get a new name for the function and rename the appropriate locations
+            newName = checkFunctionInitialized(node)
             node.name = newName
-            #node.type.declname = newName
-        else:
-            print("isFunction")
+            node.type.type.declname = newName
 
+            #find the parameters for the function and rename them as well
+            for node in node.type.args.params:
+                if node.name is not None:
+                    newName = checkVariableInitalized(node)
+                    node.name = newName
+                    while not isinstance(node.type, pycparser.c_ast.TypeDecl):
+                        node = node.type
+                    node.type.declname = newName
+
+        #checks to see if the node is an array declaration and change the name of the array
+        elif isinstance(node.type, pycparser.c_ast.ArrayDecl):
+            newName = checkVariableInitalized(node)
+            node.name = newName
+            node.type.type.declname = newName
+
+        #otherwise its a regular variable and change the name of it appropriately
+        else:
+            newName = checkVariableInitalized(node)
+            node.name = newName
+            node.type.declname = newName
 
 # text = r"""
 #     typedef int Node, Hash;
@@ -57,100 +103,29 @@ class DeclVisitor(NodeVisitor):
 # """
 
 text = r'''
-    void f(char * restrict joe){}
+    void f(char * restrict joe, int tram){}
 int main(void)
 {
-    unsigned int long k = 4;
-    int p = k;
-    int t[5];
-    p = k;
-    p = 2 + k + k + k;
+    unsigned int long test1 = 4;
+    int test2 = test1;
+    int test3[test1];
+    test2 = test1;
+    test2 = 2 + test1 + test1 + test1;
     return 0;
 }
 '''
 
-# Create the parser and ask to parse the text. parse() will throw
-# a ParseError if there's an error in the code
-#
 parser = c_parser.CParser()
 ast = parser.parse(text, filename='<none>')
 
-cv = DeclVisitor()
-cv.visit(ast)
+#ast.show()
 
+dv = DeclVisitor()
+idv = IDVisistor()
+dv.visit(ast)
+idv.visit(ast)
 
+#ast.show()
 
-# Uncomment the following line to see the AST in a nice, human
-# readable way. show() is the most useful tool in exploring ASTs
-# created by pycparser. See the c_ast.py file for the options you
-# can pass it.
-
-#ast.show(showcoord=True)
-# OK, we've seen that the top node is FileAST. This is always the
-# top node of the AST. Its children are "external declarations",
-# and are stored in a list called ext[] (see _c_ast.cfg for the
-# names and types of Nodes and their children).
-# As you see from the printout, our AST has two Typedef children
-# and one FuncDef child.
-# Let's explore FuncDef more closely. As I've mentioned, the list
-# ext[] holds the children of FileAST. Since the function
-# definition is the third child, it's ext[2]. Uncomment the
-# following line to show it:
-
-#ast.ext[2].show()
-ast.show()
-# A FuncDef consists of a declaration, a list of parameter
-# declarations (for K&R style function definitions), and a body.
-# First, let's examine the declaration.
-
-# function_decl = ast.ext[0].decl
-# function_decl.show();
-
-# for func_def in ast.ext:
-#     #print("old name: %s\t new name: %s" % (func_def.decl.name, "test"))
-#     #func_def.decl.name = "test"
-#     func_def.decl.type.type.declname = "test"
-#
-#     for var_def in func_def.body:
-#
-#         #NEED TO CHECK UNARY AND BINARY OPERATIONS IN THE OPERATIONS OR IF IT IS JUST ASSIGNING IT TO A VARAIBLE
-#         if isinstance(var_def, pycparser.c_ast.Decl):
-#             #print(var_def.type.declname)
-#             var_def.type.declname = "testing"
-#
-#         elif isinstance(var_def, pycparser.c_ast.Assignment):
-#             #print("%s %s" % (var_def.lvalue.name, var_def.rvalue.name))
-#             var_def.lvalue.name = "testing"
-#
-#
-#             #NEED TO RECURSIVELY CHECK TO SEE IF THERE ARE MORE BINARY OPERATIONS
-#             # if isinstance(var_def.rvalue, pycparser.c_ast.BinaryOp):
-#             #     #print(var_def.rvalue.right)
-#             #     if hasattr(var_def.rvalue.left, "name"):
-#             #         print("is variable")
-#             #     if hasattr(var_def.rvalue.right, "name"):
-#             #         var_def.rvalue.right.name = "testing"
-#             # elif hasattr(var_def.rvalue, "name"):
-#             #     var_def.rvalue.name = "name"
-#         #print(counter)
-#
-# #ast.show()
-
-#generator = c_generator.CGenerator()
-#print(generator.visit(ast))
-#for test in function_decl:
-#    print('name: %s\n' % test.name)
-
-# function_decl, like any other declaration, is a Decl. Its type child
-# is a FuncDecl, which has a return type and arguments stored in a
-# ParamList node
-
-
-#function_decl.type.args.show()
-
-# The following displays the name and type of each argument:
-#function_decl.type.show()
-#for param_decl in function_decl.type.args.params:
-#    print('Arg name: %s' % param_decl.name)
-#   print('Type:')
-#    param_decl.type.show(offset=6)
+generator = c_generator.CGenerator()
+print(generator.visit(ast))
