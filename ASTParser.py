@@ -11,6 +11,7 @@ conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='', db='
 cur = conn.cursor()
 
 
+
 class DeclVisitor(NodeVisitor):
     def __init__(self):
         self.values = []
