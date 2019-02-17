@@ -6,6 +6,9 @@ def init():
                                 user=dev.USER, passwd=dev.PASSWORD, 
                                 db='c_debeautify')
     global curglobal
-    curglobal = connector.cursor()
+    global includes
     global probglobal
+
+    curglobal = connector.cursor()
     probglobal = 65
+    includes = []
