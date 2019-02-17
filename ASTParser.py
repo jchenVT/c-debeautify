@@ -4,16 +4,24 @@ import pycparser
 from pycparser.c_ast import NodeVisitor
 from pycparser import c_parser, c_generator
 
-variables = {}
+variables = {'NULL' : 'NULL'}
 functions = {'main' : 'main'}
+ignore = {}
 
-conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='', db='c_debeautify')
+#connect to sql server where names are stored
+conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
 cur = conn.cursor()
 
 #checks to see if the variable being looked at has already been renamed or not
 def checkVariableInitalized(node):
     # checks to see if variable has been renamed already. If not, pick an unused name at random, add it to the dict and
     # If so, just return the name that is currently assigned
+    if node.name in functions.values():
+        return node.name
+
+    if node.name in ignore:
+        return node.name
+
     if node.name not in variables:
         cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
         result = cur.fetchone()[1]
@@ -24,12 +32,15 @@ def checkVariableInitalized(node):
 
         variables[node.name] = result
         return result
+
+    if node.name not in variables:
+        return node.name
     return variables[node.name]
 
 #checks to see if the function being looked at has already been renamed, ignoring main as that will make programs not run.
 def checkFunctionInitialized(node):
     x = node.name
-    if x not in functions:
+    if node.name not in ignore and x not in functions:
         cur.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
         result = cur.fetchone()[1]
 
@@ -39,6 +50,9 @@ def checkFunctionInitialized(node):
 
         functions[node.name] = result
         return result
+
+    if node.name not in functions:
+        return node.name
     return functions[node.name]
 
 #class that walks through the AST to find all the nodes that are of ID type. These are used in operations and assignment
@@ -47,6 +61,15 @@ class IDVisistor(NodeVisitor):
     def visit_ID(self, node):
         newName = checkVariableInitalized(node)
         node.name = newName
+
+#visits all the struct to make sure that the reference to the struct is not overwritten
+class StructRefVisistor(NodeVisitor):
+    def visit_StructRef(self,node):
+        #print(node)
+        variables[node.field.name] = node.field.name
+        while isinstance(node.name, pycparser.c_ast.StructRef):
+            node = node.name
+            variables[node.field.name] = node.field.name
 
 #class that walks through the AST to find all the nodes that are of Decl type. These are the function and variable
 #declrations
@@ -63,13 +86,14 @@ class DeclVisitor(NodeVisitor):
             node.type.type.declname = newName
 
             #find the parameters for the function and rename them as well
-            for node in node.type.args.params:
-                if node.name is not None:
-                    newName = checkVariableInitalized(node)
-                    node.name = newName
-                    while not isinstance(node.type, pycparser.c_ast.TypeDecl):
-                        node = node.type
-                    node.type.declname = newName
+            if node.type.args is not None:
+                for node in node.type.args.params:
+                    if node.name is not None:
+                        newName = checkVariableInitalized(node)
+                        node.name = newName
+                        while not isinstance(node.type, pycparser.c_ast.TypeDecl):
+                            node = node.type
+                        node.type.declname = newName
 
         #checks to see if the node is an array declaration and change the name of the array
         elif isinstance(node.type, pycparser.c_ast.ArrayDecl):
@@ -81,51 +105,77 @@ class DeclVisitor(NodeVisitor):
         else:
             newName = checkVariableInitalized(node)
             node.name = newName
+            while not isinstance(node.type, pycparser.c_ast.TypeDecl):
+                node = node.type
             node.type.declname = newName
 
-# text = r"""
-#     typedef int Node, Hash;
-#     void HashPrint(Hash* hash, void (*PrintFunc)(char*, char*))
-#     {
-#         unsigned int i;
-#         if (hash == NULL || hash->heads == NULL)
-#             return;
-#         for (i = 0; i < hash->table_size; ++i)
-#         {
-#             Node* temp = hash->heads[i];
-#             while (temp != NULL)
-#             {
-#                 PrintFunc(temp->entry->key, temp->entry->value);
-#                 temp = temp->next;
-#             }
-#         }
-#     }
-# """
+class FuncCallVisitor(NodeVisitor):
+    def visit_FuncCall(self, node):
+        if node.name.name not in functions:
+            ignore[node.name.name] = node.name.name
+        else:
+            node.name.name = functions[node.name.name]
+
+
+
+# text = r'''
+#     void f(char * restrict joe, int tram){}
+# int main(void)
+# {
+#     unsigned int long test1 = 4;
+#     int test2 = test1;
+#     int test3[test1];
+#     test2 = test1;
+#     test2 = 2 + test1 + test1 + test1;
+#     return 0;
+# }
+# '''
 
 text = r'''
-    void f(char * restrict joe, int tram){}
+double getAverage(int arr[], int size);
+
+
 int main(void)
 {
-    unsigned int long test1 = 4;
-    int test2 = test1;
-    int test3[test1];
-    test2 = test1;
-    test2 = 2 + test1 + test1 + test1;
-    return 0;
+	int array[] = {1, 2, 3, 4, 5, 6};
+	int size = 6;
+	double average;
+	average = getAverage(array, size);
+	printf("The average of the array is %f\n", average);
+	return 0;
 }
-'''
 
-parser = c_parser.CParser()
-ast = parser.parse(text, filename='<none>')
 
-#ast.show()
+double getAverage(int arr[], int size)
+{
+	double average = 0;	
+	for(int i=0; i<size; i++)
+	{
+		average += arr[i];
+	}
+	average = average/size;
+	
+	return average;
+}
 
-dv = DeclVisitor()
-idv = IDVisistor()
-dv.visit(ast)
-idv.visit(ast)
 
-#ast.show()
+ '''
+def parseFile():
+    parser = c_parser.CParser()
+    ast = parser.parse(text, filename='<none>')
 
-generator = c_generator.CGenerator()
-print(generator.visit(ast))
+    #ast.show()
+
+    dv = DeclVisitor()
+    idv = IDVisistor()
+    srv = StructRefVisistor()
+    fcv = FuncCallVisitor();
+    srv.visit(ast)
+    dv.visit(ast)
+    fcv.visit(ast)
+    idv.visit(ast)
+
+    #ast.show()
+
+    generator = c_generator.CGenerator()
+    print(generator.visit(ast))
