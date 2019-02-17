@@ -1,5 +1,5 @@
 import ASTParser
-import linereader
+from linereader import linereader
 import pymysql
 import click
 
@@ -13,10 +13,10 @@ def debeautify(filename):
     with open('filename', 'r') as content_file:
         filecontents = content_file.read()
     
-    conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
-    cur = conn.cursor()
+    connector = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
+    curs = connector.cursor()
     
-    parseFile(filecontents, cur) #prints to file
+    ASTParser.parseFile(filecontents, curs) #prints to file temp.txt
     linereader(filename)
 
 if __name__ == '__main__':

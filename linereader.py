@@ -5,21 +5,13 @@ from collections import namedtuple
 from re import compile, search, match
 
 
-def linereader(filename):
-    #python to mysql connector (pulling off michael's website)
-    conn = pymysql.connect(host='34.207.179.27',
-                           port=3306,
-                           user='joseph',
-                           passwd='josephiscool', 
-                           db='c_debeautify')
-    cur = conn.cursor()
-
+def linereader(filename, cur):
 
     #regex for finding functions
     func_pattern = compile("[A-Za-z0-9\*]+ [A-Za-z0-9]+\([A-Za-z0-9,*\[\] ]+\)")
      
     #open file into a list
-    with open(filename) as file:
+    with open(temp.txt) as file:
         lines = file.read().splitlines()
     lines_annotated = []
     #namedtuple with line info, its scope in file, the type of line it contains and whether to add random code to it
@@ -79,6 +71,3 @@ def linereader(filename):
                                "//TODO: " + TODOlist[randi] if randomvar > .7 else '' ,
                                "\n" ]))
     newfile.close()
-
-if __name__ == '__main__':
-    linereader('student.c')
