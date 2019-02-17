@@ -8,7 +8,7 @@ from os import remove
 
 @click.command()
 @click.argument('filename', nargs=1)
-@click.options('--prob', type=click.IntRange(0,100))
+@click.option('--prob', default=65, show_default=True, type=click.IntRange(0,100))
 
 def debeautify(filename, prob):
     """Program that algorithmically destroys your c code in unmaintainableness"""

@@ -70,6 +70,6 @@ def linereader(filename):
             newfile.write('//NOT NEEDED NOW: ')
         newfile.write(''.join([line_annotated.scope * '    ' , 
                                line_annotated.line_string, 
-                               "//TODO: " + TODOlist[randi] if randomvar <= settings.probglobal else '' ,
+                               " //TODO: " + TODOlist[randi] if randomvar <= (settings.probglobal / 2) else '' ,
                                "\n" ]))
     newfile.close()
