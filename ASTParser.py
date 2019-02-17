@@ -1,6 +1,7 @@
 from __future__ import print_function
 import pymysql
 import pycparser
+import settings
 import array_swap
 from pycparser.c_ast import NodeVisitor
 from pycparser import c_parser, c_generator
@@ -8,7 +9,7 @@ from pycparser import c_parser, c_generator
 variables = {'NULL' : 'NULL'}
 functions = {'main' : 'main'}
 ignore = {}
-cur = None
+
 
 
 #checks to see if the variable being looked at has already been renamed or not
@@ -22,12 +23,12 @@ def checkVariableInitalized(node):
         return node.name
 
     if node.name not in variables:
-        cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
-        result = cur.fetchone()[1]
+        settings.curglobal.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
+        result = settings.curglobal.fetchone()[1]
 
         while result in variables:
-            cur.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
-            result = cur.fetchone()[1]
+            settings.curglobal.execute("SELECT * from variables ORDER BY RAND()LIMIT 1;")
+            result = settings.curglobal.fetchone()[1]
 
         variables[node.name] = result
         return result
@@ -40,12 +41,12 @@ def checkVariableInitalized(node):
 def checkFunctionInitialized(node):
     x = node.name
     if node.name not in ignore and x not in functions:
-        cur.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
-        result = cur.fetchone()[1]
+        settings.curglobal.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
+        result = settings.curglobal.fetchone()[1]
 
         while result in functions:
-            cur.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
-            result = cur.fetchone()[1]
+            settings.curglobal.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
+            result = settings.curglobal.fetchone()[1]
 
         functions[node.name] = result
         return result
@@ -161,8 +162,7 @@ double getAverage(int arr[], int size)
  '''
 
 
-def parseFile(file, cursor):
-    cur = cursor
+def parseFile(file):
     parser = c_parser.CParser()
     ast = parser.parse(file, filename='<none>')
 
