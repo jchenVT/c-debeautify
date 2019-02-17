@@ -181,7 +181,6 @@ def parseFile(file, cursor):
     arrayVisitor.visit(ast)
 
 
-
     generator = c_generator.CGenerator()
     file = open("temp.txt", "w")
     file.write(generator.visit(ast))
