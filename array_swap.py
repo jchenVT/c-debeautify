@@ -12,7 +12,6 @@ int main()
 
 class ArrayRefVisitor(c_ast.NodeVisitor):
     def visit_ArrayRef(self, node):
-        node.show()
         x = node.name
         if isinstance(node.subscript, c_ast.ID):
             node.name = node.subscript
@@ -20,16 +19,4 @@ class ArrayRefVisitor(c_ast.NodeVisitor):
         else:
             node.name = node.subscript
             node.subscript = x
-        node.show()
-        tree.show()
         return node
-
-parser = c_parser.CParser()
-tree = parser.parse(src, filename='<none>')
-generator = c_generator.CGenerator()
-print(generator.visit(tree))
-
-rw = ArrayRefVisitor()
-rw.visit(tree)
-tree.show()
-
