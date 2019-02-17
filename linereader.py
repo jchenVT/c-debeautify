@@ -66,6 +66,8 @@ def linereader(filename):
     for x, line_annotated in enumerate(lines_annotated):
         randomvar = randint(0,100)
         randi = randint(0,len(TODOlist)-1) 
+        if line_annotated.line_type == 'assert':
+            newfile.write('//NOT NEEDED NOW: ')
         newfile.write(''.join([line_annotated.scope * '    ' , 
                                line_annotated.line_string, 
                                "//TODO: " + TODOlist[randi] if randomvar <= settings.probglobal else '' ,
