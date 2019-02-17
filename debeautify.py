@@ -24,16 +24,15 @@ def debeautify(filename, prob):
     remove('temp.txt')
 
 def pre_debeautify(filename):
-    with open(filename, 'r') as content_file:
-        text = content_file.read()
+    with open(filename) as content_file:
+        text = content_file.read().splitlines()
+
     temptext = []
-    for line in text.split('\n'):
+    for line in text:
         if "#include" in line:
-            print(line)
             settings.includes.append(line)
         elif "#define" in line:
             settings.defines.append(line)
-            print(line)
         else:
             temptext.append(line)
     text = '\n'.join(temptext)
