@@ -1,11 +1,12 @@
 import sys
 import pymysql
+import settings
 from random import random, randint
 from collections import namedtuple
 from re import compile, search, match
 
 
-def linereader(filename, cur):
+def linereader(filename):
 
     #regex for finding functions
     func_pattern = compile("[A-Za-z0-9\*]+ [A-Za-z0-9]+\([A-Za-z0-9,*\[\] ]+\)")
@@ -56,9 +57,9 @@ def linereader(filename, cur):
         if line.find('{') is not -1:
             current_scope += 1
             
-    cur.execute("SELECT * from comments WHERE type='TODO';")
+    settings.curglobal.execute("SELECT * from comments WHERE type='TODO';")
     TODOlist = []
-    for item in cur.fetchall():
+    for item in settings.curglobal.fetchall():
         TODOlist.append(item[2])
 
     newfile = open('shitty_' + filename, "w")
