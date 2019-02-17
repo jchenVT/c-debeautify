@@ -7,3 +7,5 @@ def init():
                                 db='c_debeautify')
     global curglobal
     curglobal = connector.cursor()
+    global probglobal
+    probglobal 65
