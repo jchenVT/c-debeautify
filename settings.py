@@ -1,6 +1,9 @@
 import pymysql
+import dev_settings.py as dev
 
 def init():
-    connector = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
+    connector = pymysql.connect(host=dev.HOST, port=dev.PORT,
+                                user=dev.USER, passwd=dev.PASSWORD, 
+                                db='c_debeautify')
     global curglobal
     curglobal = connector.cursor()
