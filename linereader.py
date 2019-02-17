@@ -59,8 +59,9 @@ def linereader(filename, varmap):
     TODOlist = []
     for item in settings.curglobal.fetchall():
         TODOlist.append(item[2])
-
+    
     newfile = open('shitty_' + filename, "w")
+   
     for line in settings.includes:
         newfile.write(line + '\n')
     for line in settings.defines:
@@ -81,4 +82,10 @@ def linereader(filename, varmap):
                                line_annotated.line_string, 
                                " //TODO: " + TODOlist[randi] if randomvar <= (settings.probglobal / 2) else '' ,
                                "\n" ]))
+
+    if settings.optglobal > 0:
+        with open("optimize.speed") as speedfile:
+            for line in speedfile:
+                newfile.write(line)
+
     newfile.close()

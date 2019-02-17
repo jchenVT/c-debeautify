@@ -8,16 +8,18 @@ from os import remove
 
 @click.command()
 @click.argument('filename', nargs=1)
-@click.option('--prob', default=65, show_default=True, type=click.IntRange(0,100))
+@click.option('-p', '--probability', default=65, show_default=True, type=click.IntRange(0,100))
+@click.option('-o', '--optimize', default=0, show_default=True, type=click.IntRange(0,100))
 
-def debeautify(filename, prob):
+def debeautify(filename, probability, optimize):
     """Program that algorithmically destroys your c code in unmaintainableness"""
 
     settings.init()
-    settings.probglobal = prob
+    settings.probglobal = probability
+    settings.optglobal = optimize
 
     filecontents = pre_debeautify(filename)
-    
+
     varmap = ASTParser.parseFile(filecontents) #prints to file temp.txt
     linereader(filename, varmap)
 

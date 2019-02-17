@@ -9,8 +9,10 @@ def init():
     global defines
     global includes
     global probglobal
+    global optglobal
 
     curglobal = connector.cursor()
     probglobal = 65
     defines = []
     includes = []
+    optglobal = 0
