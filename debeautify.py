@@ -28,10 +28,9 @@ def pre_debeautify(filename):
     with open(filename, 'r+') as content_file:
         text = content_file.read()
 
-    includes = []
     for line in content_file:
         if line[0] == '#':
-            includes.append(line)
+            settings.includes.append(line)
 
     def replacer(match):
         s = match.group(0)
