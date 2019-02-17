@@ -1,16 +1,18 @@
 from __future__ import print_function
 import pymysql
 import pycparser
+import array_swap
 from pycparser.c_ast import NodeVisitor
 from pycparser import c_parser, c_generator
 
 variables = {'NULL' : 'NULL'}
 functions = {'main' : 'main'}
 ignore = {}
+cur = None
 
 #connect to sql server where names are stored
-conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
-cur = conn.cursor()
+# conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
+# cur = conn.cursor()
 
 #checks to see if the variable being looked at has already been renamed or not
 def checkVariableInitalized(node):
@@ -160,9 +162,12 @@ double getAverage(int arr[], int size)
 
 
  '''
-def parseFile():
+
+
+def parseFile(file, cursor):
+    cur = cursor
     parser = c_parser.CParser()
-    ast = parser.parse(text, filename='<none>')
+    ast = parser.parse(file, filename='<none>')
 
     #ast.show()
 
@@ -175,7 +180,17 @@ def parseFile():
     fcv.visit(ast)
     idv.visit(ast)
 
-    #ast.show()
+    arrayVisitor = array_swap.ArrayRefVisitor()
+    arrayVisitor.visit(ast)
+
+
 
     generator = c_generator.CGenerator()
-    print(generator.visit(ast))
+    file = open("temp.txt", "w")
+    file.write(generator.visit(ast))
+    file.close()
+
+
+conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
+cur = conn.cursor()
+parseFile(text, cur)
