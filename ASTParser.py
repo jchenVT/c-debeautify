@@ -3,6 +3,7 @@ import pymysql
 import pycparser
 import settings
 import array_swap
+import random
 from pycparser.c_ast import NodeVisitor
 from pycparser import c_parser, c_generator
 
@@ -14,12 +15,20 @@ ignore = {}
 
 #checks to see if the variable being looked at has already been renamed or not
 def checkVariableInitalized(node):
+    ran = random.randint(1,101)
     # checks to see if variable has been renamed already. If not, pick an unused name at random, add it to the dict and
     # If so, just return the name that is currently assigned
     if node.name in functions.values():
         return node.name
 
     if node.name in ignore:
+        return node.name
+
+    if node.name in variables:
+        return variables[node.name]
+
+    if ran > settings.probglobal:
+        variables[node.name] = node.name
         return node.name
 
     if node.name not in variables:
@@ -40,6 +49,15 @@ def checkVariableInitalized(node):
 #checks to see if the function being looked at has already been renamed, ignoring main as that will make programs not run.
 def checkFunctionInitialized(node):
     x = node.name
+    ran = random.randint(1, 101)
+
+    if node.name in functions:
+        return functions[node.name]
+
+    if ran > settings.probglobal:
+        functions[node.name] = node.name
+        return node.name
+
     if node.name not in ignore and x not in functions:
         settings.curglobal.execute("SELECT * from functions ORDER BY RAND()LIMIT 1;")
         result = settings.curglobal.fetchone()[1]
@@ -116,51 +134,35 @@ class FuncCallVisitor(NodeVisitor):
         else:
             node.name.name = functions[node.name.name]
 
-
-
+#
 # text = r'''
-#     void f(char * restrict joe, int tram){}
+# double getAverage(int arr[], int size);
+#
+#
 # int main(void)
 # {
-#     unsigned int long test1 = 4;
-#     int test2 = test1;
-#     int test3[test1];
-#     test2 = test1;
-#     test2 = 2 + test1 + test1 + test1;
-#     return 0;
+# 	int array[] = {1, 2, 3, 4, 5, 6};
+# 	int size = 6;
+# 	double average;
+# 	average = getAverage(array, size);
+# 	printf("The average of the array is %f\n", average);
+# 	return 0;
 # }
-# '''
-
-text = r'''
-double getAverage(int arr[], int size);
-
-
-int main(void)
-{
-	int array[] = {1, 2, 3, 4, 5, 6};
-	int size = 6;
-	double average;
-	average = getAverage(array, size);
-	printf("The average of the array is %f\n", average);
-	return 0;
-}
-
-
-double getAverage(int arr[], int size)
-{
-	double average = 0;	
-	for(int i=0; i<size; i++)
-	{
-		average += arr[i];
-	}
-	average = average/size;
-	
-	return average;
-}
-
-
- '''
-
+#
+#
+# double getAverage(int arr[], int size)
+# {
+# 	double average = 0;
+# 	for(int i=0; i<size; i++)
+# 	{
+# 		average += arr[i];
+# 	}
+# 	average = average/size;
+#
+# 	return average;
+# }
+#
+#  '''
 
 def parseFile(file):
     parser = c_parser.CParser()
