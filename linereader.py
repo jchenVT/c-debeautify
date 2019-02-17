@@ -12,7 +12,7 @@ def linereader(filename):
     func_pattern = compile("[A-Za-z0-9\*]+ [A-Za-z0-9]+\([A-Za-z0-9,*\[\] ]+\)")
      
     #open file into a list
-    with open(temp.txt) as file:
+    with open('temp.txt') as file:
         lines = file.read().splitlines()
     lines_annotated = []
     #namedtuple with line info, its scope in file, the type of line it contains and whether to add random code to it
