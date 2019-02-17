@@ -1,5 +1,5 @@
 import pymysql
-import dev_settings.py as dev
+import dev_settings as dev
 
 def init():
     connector = pymysql.connect(host=dev.HOST, port=dev.PORT,

@@ -66,7 +66,6 @@ def linereader(filename):
     for x, line_annotated in enumerate(lines_annotated):
         randomvar = random()
         randi = randint(0,len(TODOlist)-1) 
-        print(line_annotated.line_string)
         newfile.write(''.join([line_annotated.scope * '    ' , 
                                line_annotated.line_string, 
                                "//TODO: " + TODOlist[randi] if randomvar > .7 else '' ,
