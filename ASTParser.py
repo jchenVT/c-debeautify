@@ -10,9 +10,6 @@ functions = {'main' : 'main'}
 ignore = {}
 cur = None
 
-#connect to sql server where names are stored
-# conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
-# cur = conn.cursor()
 
 #checks to see if the variable being looked at has already been renamed or not
 def checkVariableInitalized(node):
@@ -174,7 +171,7 @@ def parseFile(file, cursor):
     dv = DeclVisitor()
     idv = IDVisistor()
     srv = StructRefVisistor()
-    fcv = FuncCallVisitor();
+    fcv = FuncCallVisitor()
     srv.visit(ast)
     dv.visit(ast)
     fcv.visit(ast)
@@ -190,7 +187,3 @@ def parseFile(file, cursor):
     file.write(generator.visit(ast))
     file.close()
 
-
-conn = pymysql.connect(host='34.207.179.27', port=3306, user='michael', passwd='mikerubbertoe', db='c_debeautify')
-cur = conn.cursor()
-parseFile(text, cur)
