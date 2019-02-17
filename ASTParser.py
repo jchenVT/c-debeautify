@@ -188,3 +188,5 @@ def parseFile(file):
     file.write(generator.visit(ast))
     file.close()
 
+    return variables
+

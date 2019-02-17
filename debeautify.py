@@ -16,39 +16,44 @@ def debeautify(filename, prob):
     settings.init()
     settings.probglobal = prob
 
-    with open(filename, 'r') as content_file:
-        filecontents = content_file.read()
+    filecontents = pre_debeautify(filename)
     
-    ASTParser.parseFile(filecontents) #prints to file temp.txt
-    linereader(filename)
+    varmap = ASTParser.parseFile(filecontents) #prints to file temp.txt
+    linereader(filename, varmap)
 
     remove('temp.txt')
 
 def pre_debeautify(filename):
-    with open(filename, 'r+') as content_file:
+    with open(filename, 'r') as content_file:
         text = content_file.read()
-
-    for line in content_file:
+    temptext = []
+    for line in text.split('\n'):
         if "#include" in line:
+            print(line)
             settings.includes.append(line)
         elif "#define" in line:
             settings.defines.append(line)
+            print(line)
+        else:
+            temptext.append(line)
+    text = '\n'.join(temptext)
+    text = comment_remover(text)
+    return text
 
+
+def comment_remover(text):
     def replacer(match):
         s = match.group(0)
         if s.startswith('/'):
             return " " # note: a space and not an empty string
         else:
             return s
-    regret = re.compile(
+    pattern = re.compile(
         r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
         re.DOTALL | re.MULTILINE
     )
-    to_write = re.sub(regret, replacer, text)
-    content_file.write(re.sub(regret, replacer, text))
+    return re.sub(pattern, replacer, text)
 
-
-# comment_remover("shitty_example.c")
 
 if __name__ == '__main__':
     debeautify()

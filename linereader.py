@@ -6,7 +6,7 @@ from collections import namedtuple
 from re import compile, search, match
 
 
-def linereader(filename):
+def linereader(filename, varmap):
 
     #regex for finding functions
     func_pattern = compile("[A-Za-z0-9\*]+ [A-Za-z0-9]+\([A-Za-z0-9,*\[\] ]+\)")
@@ -33,8 +33,6 @@ def linereader(filename):
                 current_line_type = 'ifelse'
             elif line.find('assert(') is not -1:
                 current_line_type = 'assert'
-            elif line.find('#define') is not -1 or line.find('#include') is not -1:
-                current_line_type = 'pound'
             elif line.find('for') is not -1 or line.find('while') is not -1:
                 current_line_type = 'loop'
             elif line.find('switch') is not -1 or line.find('struct') is not -1:
@@ -63,6 +61,17 @@ def linereader(filename):
         TODOlist.append(item[2])
 
     newfile = open('shitty_' + filename, "w")
+    for line in settings.includes:
+        newfile.write(line + '\n')
+    for line in settings.defines:
+        parts = line.split(' ')
+        if parts[1] in varmap:
+            parts[1] = varmap[parts[1]]
+        for thing in parts:
+            newfile.write(thing + ' ')
+        newfile.write('\n')
+    newfile.write('\n')
+    
     for x, line_annotated in enumerate(lines_annotated):
         randomvar = randint(0,100)
         randi = randint(0,len(TODOlist)-1) 
