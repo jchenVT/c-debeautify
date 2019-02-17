@@ -8,4 +8,4 @@ def init():
     global curglobal
     curglobal = connector.cursor()
     global probglobal
-    probglobal 65
+    probglobal = 65
