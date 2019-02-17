@@ -109,6 +109,7 @@ class DeclVisitor(NodeVisitor):
                 node = node.type
             node.type.declname = newName
 
+
 class FuncCallVisitor(NodeVisitor):
     def visit_FuncCall(self, node):
         if node.name.name not in functions:
