@@ -64,10 +64,10 @@ def linereader(filename):
 
     newfile = open('shitty_' + filename, "w")
     for x, line_annotated in enumerate(lines_annotated):
-        randomvar = random()
+        randomvar = randint(0,100)
         randi = randint(0,len(TODOlist)-1) 
         newfile.write(''.join([line_annotated.scope * '    ' , 
                                line_annotated.line_string, 
-                               "//TODO: " + TODOlist[randi] if randomvar > .7 else '' ,
+                               "//TODO: " + TODOlist[randi] if randomvar <= settings.probglobal else '' ,
                                "\n" ]))
     newfile.close()
